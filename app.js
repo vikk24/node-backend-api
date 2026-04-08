@@ -22,6 +22,10 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+app.get('/', (req, res) => {
+    res.send('Server is running 🚀');
+});
+
 // routes
 const userRoutes = require('./src/routes/userRoutes');
 app.use('/users', userRoutes);
