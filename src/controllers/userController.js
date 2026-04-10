@@ -82,47 +82,48 @@ exports.signup = async (req, res) => {
 };
 
 // LOGIN
-exports.login = (req, res) => {
-    const { email, password } = req.body;
+exports.login = async (req, res) => {
 
-    const sql = 'SELECT * FROM users WHERE email = ?';
+    
+  console.log("🔥 LOGIN HIT");
+  console.log("📦 BODY:", req.body);
+  const { email, password } = req.body;
 
-    db.query(sql, [email], async (err, result) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: "DB error" });
-        }
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
 
-        if (result.length === 0) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email"
-            });
-        }
+    if (rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
-        const user = result[0];
+    const user = rows[0];
 
-        const isMatch = await bcrypt.compare(password, user.password);
+    if (user.password !== password) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid password",
+      });
+    }
 
-        if (!isMatch) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid password"
-            });
-        }
-
-        // create token
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
-        );
-
-        res.json({
-            success: true,
-            message: "Login successful",
-            token
-        });
+    return res.json({
+      success: true,
+      message: "Login successful",
+      token: "YOUR_JWT_HERE",
     });
+
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 };
 
 exports.updateUser = (req, res) => {
