@@ -6,31 +6,21 @@ const userService = require('../services/userService');
 
 // GET users
 exports.getUsers = async (req, res) => {
-    const email = req.query.email;
+  try {
+    const [rows] = await db.query("SELECT * FROM users");
 
-    try {
-        let users;
+    res.json({
+      success: true,
+      data: rows
+    });
 
-        // 🔍 filtering logic
-        if (email) {
-            users = await userService.getUserByEmail(email);
-        } else {
-            // 🔥 FIX: get ALL users (no pagination)
-            users = await userService.getAllUsers();
-        }
-
-        res.status(200).json({
-            success: true,
-            count: users.length,
-            data: users
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Server error"
-        });
-    }
+  } catch (error) {
+    console.error("GET USERS ERROR:", error); // 👈 ADD THIS
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
 // SIGNUP
 exports.signup = async (req, res) => {
