@@ -24,51 +24,53 @@ exports.getUsers = async (req, res) => {
 };
 // SIGNUP
 exports.signup = async (req, res) => {
-    const { name, email, password } = req.body;
+  const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-        return res.status(400).json({
-            success: false,
-            message: "All fields are required"
-        });
+  console.log("🔥 SIGNUP HIT:", req.body);
+
+  if (!name || !email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "All fields are required"
+    });
+  }
+
+  try {
+    // ✅ check existing user
+    const [existingUser] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (existingUser.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered"
+      });
     }
 
-    try {
-        // 🔍 check if email already exists
-        db.query('SELECT * FROM users WHERE email = ?', [email], async (err, result) => {
-            if (result.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Email already registered"
-                });
-            }
+    // ✅ hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-            // 🔐 hash password
-            const hashedPassword = await bcrypt.hash(password, 10);
+    // ✅ insert user
+    await db.query(
+      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+      [name, email, hashedPassword]
+    );
 
-            const sql = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully"
+    });
 
-            db.query(sql, [name, email, hashedPassword], (err, result) => {
-                if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Database error"
-                    });
-                }
+  } catch (error) {
+    console.error("SIGNUP ERROR:", error); // 🔥 VERY IMPORTANT
 
-                res.status(201).json({
-                    success: true,
-                    message: "User registered successfully"
-                });
-            });
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Server error"
-        });
-    }
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
 
 // LOGIN
