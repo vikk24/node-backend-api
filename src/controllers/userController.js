@@ -111,10 +111,21 @@ exports.login = async (req, res) => {
       });
     }
 
+    const token = jwt.sign(
+    {
+        id: user.id,
+        email: user.email,
+    },
+    process.env.JWT_SECRET,
+    {
+        expiresIn: "1h",
+    }
+    );
+
     return res.json({
-      success: true,
-      message: "Login successful",
-      token: "YOUR_JWT_HERE",
+    success: true,
+    message: "Login successful",
+    token,
     });
 
   } catch (error) {
