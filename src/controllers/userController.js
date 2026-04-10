@@ -129,37 +129,72 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.updateUser = (req, res) => {
-    const { id } = req.params;
-    const { name, email } = req.body;
+exports.updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { name, email } = req.body;
 
-    const sql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-
-    db.query(sql, [name, email, id], (err, result) => {
-        if (err) {
-            return res.status(500).json({ success: false });
-        }
-
-        res.json({
-            success: true,
-            message: "User updated"
-        });
+  if (!name || !email) {
+    return res.status(400).json({
+      success: false,
+      message: "Name and email are required"
     });
+  }
+
+  try {
+    const [result] = await db.query(
+      "UPDATE users SET name = ?, email = ? WHERE id = ?",
+      [name, email, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "User updated successfully"
+    });
+
+  } catch (error) {
+    console.error("UPDATE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
 
-exports.deleteUser = (req, res) => {
-    const { id } = req.params;
+exports.deleteUser = async (req, res) => {
+  const { id } = req.params;
 
-    const sql = 'DELETE FROM users WHERE id = ?';
+  try {
+    const [result] = await db.query(
+      "DELETE FROM users WHERE id = ?",
+      [id]
+    );
 
-    db.query(sql, [id], (err, result) => {
-        if (err) {
-            return res.status(500).json({ success: false });
-        }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
 
-        res.json({
-            success: true,
-            message: "User deleted"
-        });
+    return res.json({
+      success: true,
+      message: "User deleted successfully"
     });
+
+  } catch (error) {
+    console.error("DELETE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
